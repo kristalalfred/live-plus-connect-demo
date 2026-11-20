@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
 use serde::Serialize;
-use weave_core::{HopStatus, LinkCondition, NodeStatus};
+use connect_core::{HopStatus, LinkCondition, NodeStatus};
 
 use crate::config::Config;
 use crate::live::Source;
 use crate::seat::Seat;
-use crate::weave::StreamStatus;
+use crate::connect::StreamStatus;
 
 /// What the last reconcile found, keyed by seat. Everything the pages show is
 /// derived from this and the seat store, so one tick produces one consistent
@@ -18,7 +18,7 @@ pub struct Snapshot {
     pub streams: BTreeMap<String, StreamStatus>,
     pub sources: BTreeMap<String, Source>,
     /// The hop status the guest's own page last reported. The gateway proxies
-    /// those calls, so it reads them on the way past — no extra weave call
+    /// those calls, so it reads them on the way past — no extra connect call
     /// buys the sender's own view of its camera.
     pub reported: BTreeMap<String, Vec<HopStatus>>,
     pub errors: Vec<String>,
@@ -172,11 +172,11 @@ fn routed_step(stream: Option<&StreamStatus>, sender: Option<&HopStatus>, cfg: &
             State::Active,
             stream
                 .reason()
-                .or_else(|| Some("weave is placing the stream".to_string())),
+                .or_else(|| Some("connect is placing the stream".to_string())),
         ),
         "failed" => step("routed", State::Failed, stream.reason()),
         _ => {
-            if matches!(sender.map(|hop| hop.state), Some(weave_core::HopState::Failed)) {
+            if matches!(sender.map(|hop| hop.state), Some(connect_core::HopState::Failed)) {
                 return step(
                     "routed",
                     State::Failed,

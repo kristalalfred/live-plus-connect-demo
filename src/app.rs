@@ -7,13 +7,13 @@ use crate::config::Config;
 use crate::live::OpenLive;
 use crate::seat::SeatStore;
 use crate::snapshot::Snapshot;
-use crate::weave::Weave;
+use crate::connect::Connect;
 
 pub struct App {
     pub cfg: Arc<Config>,
     pub seats: Mutex<SeatStore>,
     pub snapshot: RwLock<Snapshot>,
-    pub weave: Weave,
+    pub connect: Connect,
     pub live: Option<OpenLive>,
     /// Woken when something happened that desired state should follow — a
     /// webhook delivery, a new invite, a revoke. The reconcile loop is the only
@@ -27,7 +27,7 @@ impl App {
             .timeout(std::time::Duration::from_secs(5))
             .build()?;
         let seats = SeatStore::load(&cfg.state)?;
-        let weave = Weave::new(
+        let connect = Connect::new(
             http.clone(),
             cfg.northbound_url.clone(),
             cfg.northbound_token.clone(),
@@ -42,7 +42,7 @@ impl App {
             cfg: Arc::new(cfg),
             seats: Mutex::new(seats),
             snapshot: RwLock::new(Snapshot::default()),
-            weave,
+            connect,
             live,
             nudge: Notify::new(),
         }))

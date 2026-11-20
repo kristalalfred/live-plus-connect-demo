@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
-use weave_core::{
+use connect_core::{
     API_V1, DataPlaneAddr, DeviceKind, HopStatus, NodeCapabilities, NodeDescriptor, NodeEndpoint,
     NodeHeartbeat, NodeRegistration, NodeStatus, PROTOCOL_VERSION, Reachability, RoleSet,
     Signalling, SocketRole, SrtEndpoint, StreamDefinition, StreamTransport, Transport,
@@ -19,7 +19,7 @@ pub struct Proxied {
 }
 
 #[derive(Debug)]
-pub struct Weave {
+pub struct Connect {
     http: reqwest::Client,
     northbound: String,
     northbound_token: Option<String>,
@@ -28,7 +28,7 @@ pub struct Weave {
 }
 
 /// `GET /v1/status` on northbound. Shaped by the controller's rollup rather
-/// than by `weave-core`, so it is declared here.
+/// than by `connect-core`, so it is declared here.
 #[derive(Debug, Default, Deserialize)]
 pub struct StatusRollup {
     #[serde(default)]
@@ -57,7 +57,7 @@ pub struct EndpointAddr {
     pub url: String,
 }
 
-impl Weave {
+impl Connect {
     pub fn new(
         http: reqwest::Client,
         northbound: String,
@@ -94,7 +94,7 @@ impl Weave {
                     )],
                     devices: [DeviceKind::Capture].into_iter().collect(),
                     data_plane: BTreeMap::from([(
-                        weave_core::DEFAULT_DATA_PLANE_ALIAS.to_string(),
+                        connect_core::DEFAULT_DATA_PLANE_ALIAS.to_string(),
                         DataPlaneAddr {
                             host: "browser".to_string(),
                             reachability: Reachability::OutboundOnly,
@@ -134,12 +134,12 @@ impl Weave {
             .with_southbound_token(request)
             .send()
             .await
-            .context("weave southbound unreachable")?;
+            .context("connect southbound unreachable")?;
         let status = response.status();
         if !status.is_success() {
-            bail!("weave southbound GET /v1/nodes answered {status}");
+            bail!("connect southbound GET /v1/nodes answered {status}");
         }
-        response.json().await.context("reading weave's node list")
+        response.json().await.context("reading connect's node list")
     }
 
     // --- northbound, as the operator ---
@@ -180,11 +180,11 @@ impl Weave {
             .with_northbound_token(request)
             .send()
             .await
-            .context("weave northbound unreachable")?;
+            .context("connect northbound unreachable")?;
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            bail!("weave refused stream {}: {status} {}", stream.name, body.trim());
+            bail!("connect refused stream {}: {status} {}", stream.name, body.trim());
         }
         Ok(())
     }
@@ -197,19 +197,19 @@ impl Weave {
             .with_northbound_token(request)
             .send()
             .await
-            .context("weave northbound unreachable")?;
+            .context("connect northbound unreachable")?;
         let status = response.status();
         if status == reqwest::StatusCode::NOT_FOUND {
             return Ok(false);
         }
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            bail!("weave refused to delete stream {name}: {status} {}", body.trim());
+            bail!("connect refused to delete stream {name}: {status} {}", body.trim());
         }
         Ok(true)
     }
 
-    /// Desired state — every stream weave holds, updated the moment one is
+    /// Desired state — every stream connect holds, updated the moment one is
     /// accepted. The status rollup lags it by a controller tick, so asking
     /// that instead makes a fresh stream look absent and get declared again.
     pub async fn streams(&self) -> Result<Vec<StreamDefinition>> {
@@ -218,12 +218,12 @@ impl Weave {
             .with_northbound_token(request)
             .send()
             .await
-            .context("weave northbound unreachable")?;
+            .context("connect northbound unreachable")?;
         let status = response.status();
         if !status.is_success() {
-            bail!("weave northbound GET /v1/streams answered {status}");
+            bail!("connect northbound GET /v1/streams answered {status}");
         }
-        response.json().await.context("reading weave's stream list")
+        response.json().await.context("reading connect's stream list")
     }
 
     pub async fn status(&self) -> Result<StatusRollup> {
@@ -232,12 +232,12 @@ impl Weave {
             .with_northbound_token(request)
             .send()
             .await
-            .context("weave northbound unreachable")?;
+            .context("connect northbound unreachable")?;
         let status = response.status();
         if !status.is_success() {
-            bail!("weave northbound GET /v1/status answered {status}");
+            bail!("connect northbound GET /v1/status answered {status}");
         }
-        response.json().await.context("reading weave's status rollup")
+        response.json().await.context("reading connect's status rollup")
     }
 
     // --- plumbing ---
@@ -270,14 +270,14 @@ impl Weave {
     }
 
     async fn proxied(&self, request: reqwest::RequestBuilder) -> Result<Proxied> {
-        let response = request.send().await.context("weave southbound unreachable")?;
+        let response = request.send().await.context("connect southbound unreachable")?;
         let status = response.status();
         let content_type = response
             .headers()
             .get(reqwest::header::CONTENT_TYPE)
             .and_then(|value| value.to_str().ok())
             .map(str::to_string);
-        let body = response.bytes().await.context("reading weave's response")?;
+        let body = response.bytes().await.context("reading connect's response")?;
         Ok(Proxied {
             status,
             content_type,
@@ -287,7 +287,7 @@ impl Weave {
 }
 
 impl StreamStatus {
-    /// Weave leaves this out rather than blank, but a reason that arrived
+    /// Connect leaves this out rather than blank, but a reason that arrived
     /// empty would render as a detail line with nothing in it.
     pub fn reason(&self) -> Option<String> {
         self.reason

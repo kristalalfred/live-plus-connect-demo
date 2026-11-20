@@ -69,7 +69,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
-/// A seat id travels into a weave node id, a weave stream name and — through
+/// A seat id travels into a connect node id, a connect stream name and — through
 /// open-live's provider — a CouchDB document id, so it is held to the narrowest
 /// of those alphabets.
 pub fn seat_id(display_name: &str, suffix: &str) -> String {

@@ -8,14 +8,14 @@ use axum::routing::{delete, get, post};
 use axum::{Json, body::Body};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use weave_core::HopStatus;
-use weave_core::webhook::{Event, EventType};
+use connect_core::HopStatus;
+use connect_core::webhook::{Event, EventType};
 
 use crate::app::App;
 use crate::invite;
 use crate::seat::Seat;
 use crate::snapshot::{SeatView, Step};
-use crate::weave::Proxied;
+use crate::connect::Proxied;
 
 pub fn router(app: Arc<App>) -> Router {
     Router::new()
@@ -30,7 +30,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/api/session/{token}/register", post(register))
         .route("/api/session/{token}/heartbeat", post(heartbeat))
         .route("/api/session/{token}/desired", get(desired))
-        .route("/api/weave/events", post(weave_event))
+        .route("/api/connect/events", post(connect_event))
         .with_state(app)
 }
 
@@ -164,7 +164,7 @@ async fn create_invite(
 
 /// Revoking marks the seat rather than deleting it, so the reconcile loop is
 /// still the one thing that withdraws the stream and the seat only disappears
-/// once weave has confirmed it is gone.
+/// once connect has confirmed it is gone.
 async fn revoke(
     State(app): State<Arc<App>>,
     Path(seat): Path<String>,
@@ -222,7 +222,7 @@ struct Report {
 }
 
 /// The page says how its hops are doing; the gateway decides everything else
-/// about the node, including its id. A guest holds no weave credential and
+/// about the node, including its id. A guest holds no connect credential and
 /// cannot register as another seat.
 async fn register(
     State(app): State<Arc<App>>,
@@ -232,7 +232,7 @@ async fn register(
     let seat = seat_for(&app, &token, crate::now())?;
     record(&app, &seat.seat, report.hop_status.clone());
     let proxied = app
-        .weave
+        .connect
         .register(&seat.seat, report.hop_status)
         .await
         .map_err(ApiError::bad_gateway)?;
@@ -252,7 +252,7 @@ async fn heartbeat(
     let seat = seat_for(&app, &token, crate::now())?;
     record(&app, &seat.seat, report.hop_status.clone());
     let proxied = app
-        .weave
+        .connect
         .heartbeat(&seat.seat, report.hop_status)
         .await
         .map_err(ApiError::bad_gateway)?;
@@ -265,7 +265,7 @@ async fn desired(
 ) -> Result<Response, ApiError> {
     let seat = seat_for(&app, &token, crate::now())?;
     let proxied = app
-        .weave
+        .connect
         .desired(&seat.seat)
         .await
         .map_err(ApiError::bad_gateway)?;
@@ -304,12 +304,12 @@ fn seat_for(app: &App, token: &str, now: i64) -> Result<Seat, ApiError> {
     Ok(seat)
 }
 
-// --- weave webhook ---
+// --- connect webhook ---
 
 /// Deliveries are hints. Acting on one means nudging the reconcile loop, which
 /// reads the real state itself, so a duplicate, a stale or a lost event all
 /// converge to the same place.
-async fn weave_event(
+async fn connect_event(
     State(app): State<Arc<App>>,
     headers: HeaderMap,
     Json(event): Json<Event>,
@@ -338,7 +338,7 @@ async fn weave_event(
         tracing::info!(
             seat = %event.node.id,
             event = %event.event_type,
-            "weave reported a lifecycle change"
+            "connect reported a lifecycle change"
         );
         app.nudge.notify_one();
     } else {

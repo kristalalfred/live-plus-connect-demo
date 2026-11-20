@@ -74,7 +74,7 @@ if (reached) {
   const flowing = seat.chain.find(step => step.step === "flowing");
   console.log("the guest's camera reached open-live as a source");
   if (flowing.state !== "done") {
-    console.log("  weave does not read the stream as flowing yet: nothing is pulling the");
+    console.log("  connect does not read the stream as flowing yet: nothing is pulling the");
     console.log("  gateway's SRT output until a production consuming this source is active");
   }
 } else {
@@ -85,7 +85,7 @@ if (args.stay) {
   await new Promise(() => {});
 }
 await browser.close();
-// Revoking withdraws the weave stream, which is what stops open-live keeping a
+// Revoking withdraws the connect stream, which is what stops open-live keeping a
 // source document for a guest this script invented.
 await fetch(`${gateway}/api/seats/${invite.seat}`, { method: "DELETE" }).catch(() => {});
 console.log(`revoked ${invite.seat}`);

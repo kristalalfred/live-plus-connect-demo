@@ -2,7 +2,7 @@ use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 
 /// A read-only view of open-live. The gateway never writes there: open-live
-/// discovers a guest's feed by itself, by polling weave's northbound API, and
+/// discovers a guest's feed by itself, by polling connect's northbound API, and
 /// this client only reports whether that has happened yet.
 #[derive(Debug)]
 pub struct OpenLive {
@@ -54,11 +54,11 @@ impl OpenLive {
 }
 
 impl Source {
-    /// open-live's weave provider sets `externalId` to `<stream>/<index>`, and
+    /// open-live's connect provider sets `externalId` to `<stream>/<index>`, and
     /// the gateway names each stream after its seat.
     pub fn seat(&self) -> Option<&str> {
         let provider = self.provider.as_ref()?;
-        if provider.id != "weave" {
+        if provider.id != "connect" {
             return None;
         }
         provider.external_id.split('/').next()

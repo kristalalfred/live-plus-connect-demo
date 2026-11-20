@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 /// One guest's place in the broadcast. The id is the whole identity: it is the
-/// weave node id the page registers as, the weave stream name, and — through
+/// connect node id the page registers as, the connect stream name, and — through
 /// open-live's provider — the source document id. One seat, one stream, one
 /// source, stable across a guest rejoining.
 #[derive(Debug, Clone, Serialize, Deserialize)]

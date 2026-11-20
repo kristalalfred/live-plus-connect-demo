@@ -22,7 +22,7 @@ let fatal = null;
 // --- gateway ---
 
 // The gateway signs the southbound calls and pins the node id, so this page
-// holds no weave token and never talks to the control plane itself.
+// holds no connect token and never talks to the control plane itself.
 async function gateway(method, path, body) {
   return fetch(`/api/session/${encodeURIComponent(token)}${path}`, {
     method,

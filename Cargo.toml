@@ -6,9 +6,9 @@ license = "MIT"
 publish = false
 
 [dependencies]
-# The wire contract comes from open-weave itself, so the payloads this service
+# The wire contract comes from open-connect itself, so the payloads this service
 # builds cannot drift from the ones the control plane accepts.
-weave-core = { git = "https://github.com/KristalAlfred/open-weave" }
+connect-core = { git = "https://github.com/KristalAlfred/open-connect", rev = "20db0ee931497954c061c5f20bce30ffe1001fa5", package = "weave-core" }
 
 anyhow = "1"
 axum = "0.8"

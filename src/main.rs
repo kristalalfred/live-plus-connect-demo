@@ -7,7 +7,7 @@ mod reconcile;
 mod routes;
 mod seat;
 mod snapshot;
-mod weave;
+mod connect;
 
 use anyhow::{Context, Result};
 use clap::Parser;

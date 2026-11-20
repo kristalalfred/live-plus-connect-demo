@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use weave_core::NodeStatus;
+use connect_core::NodeStatus;
 
 use crate::app::App;
 use crate::snapshot::NodeFacts;
@@ -24,7 +24,7 @@ pub async fn tick(app: &App) {
     let seats = app.seats.lock().expect("seat store lock").list();
     let mut errors = Vec::new();
 
-    let nodes = match app.weave.nodes().await {
+    let nodes = match app.connect.nodes().await {
         Ok(nodes) => Some(
             nodes
                 .into_iter()
@@ -37,7 +37,7 @@ pub async fn tick(app: &App) {
         }
     };
 
-    let declared = match app.weave.streams().await {
+    let declared = match app.connect.streams().await {
         Ok(streams) => Some(
             streams
                 .into_iter()
@@ -50,7 +50,7 @@ pub async fn tick(app: &App) {
         }
     };
 
-    let streams = match app.weave.status().await {
+    let streams = match app.connect.status().await {
         Ok(rollup) => rollup
             .streams
             .into_iter()
@@ -76,7 +76,7 @@ pub async fn tick(app: &App) {
         None => BTreeMap::new(),
     };
 
-    // Nothing is changed unless weave answered both questions. An unreachable
+    // Nothing is changed unless connect answered both questions. An unreachable
     // northbound reads as an empty stream list, and acting on that would
     // withdraw every guest's stream.
     if let (Some(nodes), Some(declared)) = (&nodes, &declared) {
@@ -87,17 +87,17 @@ pub async fn tick(app: &App) {
             );
             let exists = declared.contains(&seat.seat);
             // A guest whose page is merely reloading keeps the stream: the node
-            // stays known to weave until its TTL, and the seat until revoked.
+            // stays known to connect until its TTL, and the seat until revoked.
             let unwanted = seat.revoked || seat.expired(now);
 
             if online && !unwanted && !exists {
-                let stream = app.weave.stream_for(
+                let stream = app.connect.stream_for(
                     &seat.seat,
                     &app.cfg.target_node,
                     app.cfg.target_network.as_deref(),
                     app.cfg.target_latency_ms,
                 );
-                match app.weave.declare_stream(&stream).await {
+                match app.connect.declare_stream(&stream).await {
                     Ok(()) => tracing::info!(
                         seat = %seat.seat,
                         target = %app.cfg.target_node,
@@ -108,7 +108,7 @@ pub async fn tick(app: &App) {
             }
 
             if unwanted && exists {
-                match app.weave.delete_stream(&seat.seat).await {
+                match app.connect.delete_stream(&seat.seat).await {
                     Ok(_) => tracing::info!(seat = %seat.seat, "withdrew the guest's stream"),
                     Err(error) => errors.push(format!("{error:#}")),
                 }

@@ -8,11 +8,11 @@ use clap::Parser;
 use crate::invite::SigningKey;
 
 /// Everything the gateway is configured with. Flags and environment share one
-/// definition, matching open-weave's own `clap` style.
+/// definition, matching open-connect's own `clap` style.
 #[derive(Debug, Parser)]
 #[command(
     name = "greenroom",
-    about = "Invite a guest into an open-live broadcast over open-weave"
+    about = "Invite a guest into an open-live broadcast over open-connect"
 )]
 pub struct Args {
     /// Address the gateway listens on.
@@ -44,7 +44,7 @@ pub struct Args {
     #[arg(long, env = "GREENROOM_ASSETS")]
     pub assets: Option<PathBuf>,
 
-    /// How often desired state is reconciled against weave and open-live.
+    /// How often desired state is reconciled against connect and open-live.
     #[arg(long, env = "GREENROOM_RECONCILE_SECS", default_value = "3")]
     pub reconcile_secs: u64,
 
@@ -62,13 +62,13 @@ pub struct Args {
     #[arg(long, env = "GREENROOM_TARGET_LATENCY_MS", default_value = "200")]
     pub target_latency_ms: u32,
 
-    #[arg(long, env = "WEAVE_NORTHBOUND_URL", default_value = "http://127.0.0.1:9080")]
+    #[arg(long, env = "CONNECT_NORTHBOUND_URL", default_value = "http://127.0.0.1:9080")]
     pub northbound_url: String,
-    #[arg(long, env = "WEAVE_NORTHBOUND_TOKEN")]
+    #[arg(long, env = "CONNECT_NORTHBOUND_TOKEN")]
     pub northbound_token: Option<String>,
-    #[arg(long, env = "WEAVE_SOUTHBOUND_URL", default_value = "http://127.0.0.1:8081")]
+    #[arg(long, env = "CONNECT_SOUTHBOUND_URL", default_value = "http://127.0.0.1:8081")]
     pub southbound_url: String,
-    #[arg(long, env = "WEAVE_SOUTHBOUND_TOKEN")]
+    #[arg(long, env = "CONNECT_SOUTHBOUND_TOKEN")]
     pub southbound_token: Option<String>,
 
     /// open-live's API, read to show whether a guest's source landed there.
@@ -110,7 +110,7 @@ impl Config {
         if webhook_token.is_none() && !auth_disabled {
             bail!(
                 "GREENROOM_WEBHOOK_TOKEN is unset, so any caller could report a node as \
-                 registered. Set it to the controller's WEAVE_WEBHOOK_TOKEN, or set \
+                 registered. Set it to the controller's CONNECT_WEBHOOK_TOKEN, or set \
                  GREENROOM_AUTH_DISABLED=1 to accept that."
             );
         }
@@ -161,7 +161,7 @@ impl Config {
     }
 }
 
-/// Blank and whitespace-only values read as unset, as they do in open-weave.
+/// Blank and whitespace-only values read as unset, as they do in open-connect.
 fn present(value: Option<String>) -> Option<String> {
     value.filter(|value| !value.trim().is_empty())
 }
